@@ -20,15 +20,15 @@ from thirdparty.bop_toolkit.bop_toolkit_lib.inout import load_ply
 from lib.utils.mesh_database import load_mesh_db, load_mesh_db_DEBUG
 
 YCBV_CLASSES = {
-     1: '002_master_chef_can',
-     2: '003_cracker_box',
-     3: '004_sugar_box',
-     4: '005_tomato_soup_can',
-     5: '006_mustard_bottle',
-     6: '007_tuna_fish_can',
-     7: '008_pudding_box',
-     8: '009_gelatin_box',
-     9: '010_potted_meat_can',
+    1: '002_master_chef_can',
+    2: '003_cracker_box',
+    3: '004_sugar_box',
+    4: '005_tomato_soup_can',
+    5: '006_mustard_bottle',
+    6: '007_tuna_fish_can',
+    7: '008_pudding_box',
+    8: '009_gelatin_box',
+    9: '010_potted_meat_can',
     10: '011_banana',
     11: '019_pitcher_base',
     12: '021_bleach_cleanser',
@@ -45,15 +45,16 @@ YCBV_CLASSES = {
 
 TLESS_CLASSES = {}
 for i in range(30):
-    TLESS_CLASSES[i+1] = str(i+1)
+    TLESS_CLASSES[i + 1] = str(i + 1)
+
 
 class Evaluator:
-    def __init__(self, dataset, data_root, chkpt_path, 
-            nviews=1, no_network_cov=False, detection_type='saved', 
-            debug_gt_kp=False, gt_cam_pose=False, no_prior_det=False,
-            show_viz=False, viz_cov=False, no_viz=False, 
-            do_viz_extra=False, debug_saved_only=False, give_all_prior=False):
-        
+    def __init__(self, dataset, data_root, chkpt_path,
+                 nviews=1, no_network_cov=False, detection_type='saved',
+                 debug_gt_kp=False, gt_cam_pose=False, no_prior_det=False,
+                 show_viz=False, viz_cov=False, no_viz=False,
+                 do_viz_extra=False, debug_saved_only=False, give_all_prior=False):
+
         self.model_path = os.path.dirname(chkpt_path)
         kp_var_thresh = 0.2
         bbox_thresh = 0.9
@@ -63,14 +64,14 @@ class Evaluator:
             models = "models_bop-compat_eval"
             split = "test"
             self.do_add = True
-            manual_kp_std = 0.01 # Close avg network STD for this dataset
+            manual_kp_std = 0.01  # Close avg network STD for this dataset
         elif dataset == "tless":
             models = "models_eval"
             split = "test_primesense"
             self.do_add = False
             kp_var_thresh = 0.5
             bbox_thresh = 1.0
-            manual_kp_std = 0.1 # Manually tuned
+            manual_kp_std = 0.1  # Manually tuned
             opt_init_with_outliers = True
         else:
             assert False
@@ -80,11 +81,11 @@ class Evaluator:
         self.debug_saved_only = debug_saved_only
         if not self.debug_saved_only:
             self.object_slam = ObjectSLAM(chkpt_path, self.mesh_db, no_network_cov=no_network_cov,
-                    no_prior_det=no_prior_det, debug_gt_kp=debug_gt_kp, sfm_mode=nviews>0,
-                    single_view_mode=nviews==1, viz_cov=viz_cov, do_viz_extra=do_viz_extra,
-                    kp_var_thresh=kp_var_thresh, bbox_thresh=bbox_thresh, 
-                    bbox_inflate=bbox_inflate, manual_kp_std=manual_kp_std,
-                    opt_init_with_outliers=opt_init_with_outliers, give_all_prior=give_all_prior)
+                                          no_prior_det=no_prior_det, debug_gt_kp=debug_gt_kp, sfm_mode=nviews > 0,
+                                          single_view_mode=nviews == 1, viz_cov=viz_cov, do_viz_extra=do_viz_extra,
+                                          kp_var_thresh=kp_var_thresh, bbox_thresh=bbox_thresh,
+                                          bbox_inflate=bbox_inflate, manual_kp_std=manual_kp_std,
+                                          opt_init_with_outliers=opt_init_with_outliers, give_all_prior=give_all_prior)
         self.nviews = nviews
         if self.nviews == 1:
             print("NOTE: Running in single-view mode (nviews=1)")
@@ -109,7 +110,7 @@ class Evaluator:
                 self.saved_detections = utils.load_pix2pose_results(self.dataset.bop_root)
             else:
                 assert False
-            self.saved_detections_map = {} 
+            self.saved_detections_map = {}
             for i in range(len(self.saved_detections["view_ids"])):
                 scene_id = self.saved_detections["scene_ids"][i]
                 view_id = self.saved_detections["view_ids"][i]
@@ -119,9 +120,9 @@ class Evaluator:
                 if view_id not in self.saved_detections_map[scene_id].keys():
                     self.saved_detections_map[scene_id][view_id] = {}
                 assert obj_id not in self.saved_detections_map[scene_id][view_id].keys(), \
-                        "Found duplicate object in saved detections"
+                    "Found duplicate object in saved detections"
                 if self.dataset.targets is None \
-                        or obj_id in self.dataset.targets.get(scene_id,{}).get(view_id,[]):
+                        or obj_id in self.dataset.targets.get(scene_id, {}).get(view_id, []):
                     self.saved_detections_map[scene_id][view_id][obj_id] = i
 
     def run(self):
@@ -134,13 +135,13 @@ class Evaluator:
             import traceback
             # Print stack trace
             traceback.print_exc()
-        print(f"Eval took {time()-t0:.3f} sec")
+        print(f"Eval took {time() - t0:.3f} sec")
 
     def __run(self):
         if self.saved_detections is not None:
             # Eval PoseCNN or other saved detections to validate eval code
             self.saved_det_meter = EvalMeter(self.mesh_db)
-        
+
         num_cam_poses_found = 0
         num = 0
 
@@ -149,7 +150,7 @@ class Evaluator:
             csv_lines = []
 
             method = f"pkpnet-epoch={self.object_slam.model_epoch}" \
-                   + f"-nviews={self.nviews}-det={self.detection_type}"
+                     + f"-nviews={self.nviews}-det={self.detection_type}"
             if self.debug_gt_kp:
                 method += "-GT-KP"
             if self.gt_cam_pose:
@@ -171,9 +172,9 @@ class Evaluator:
             print(f"Writing eval vizualizations to {viz_path}")
 
         scene_ids = self.dataset.scene_ids()
-        #for i, scene_id in enumerate(scene_ids[5:6]): # YCBV scene 53 with bowl
+        # for i, scene_id in enumerate(scene_ids[5:6]): # YCBV scene 53 with bowl
         for i, scene_id in enumerate(scene_ids):
-            #break # DEBUG if you have bop csv already written and just want to skip to that
+            # break # DEBUG if you have bop csv already written and just want to skip to that
             view_ids = self.dataset.view_ids(scene_id)
             if not self.debug_saved_only and self.nviews < 0:
                 self.object_slam.reset()
@@ -183,34 +184,34 @@ class Evaluator:
             scene_results = []
 
             for j, view_id in enumerate(view_ids):
-                print_ln = f"Running scene [{i+1}/{len(scene_ids)}] view [{j+1}/{len(view_ids)}]"
+                print_ln = f"Running scene [{i + 1}/{len(scene_ids)}] view [{j + 1}/{len(view_ids)}]"
                 gt_obj_ids = self.dataset.obj_ids(scene_id, view_id)
                 if self.debug_saved_only:
-                    print(print_ln + ' '*(80-len(print_ln)), end='\r', flush=True)
+                    print(print_ln + ' ' * (80 - len(print_ln)), end='\r', flush=True)
                 else:
                     print("==============================================================")
                     print(print_ln)
                     views_to_proc = [view_id]
                     if self.nviews > 1:
                         # Sample nviews-1 other views (excluding view_id)
-                        views_to_proc += np.random.choice(view_ids[:j] + view_ids[j+1:],
-                                size=self.nviews-1, replace=False).tolist()
+                        views_to_proc += np.random.choice(view_ids[:j] + view_ids[j + 1:],
+                                                          size=self.nviews - 1, replace=False).tolist()
                     results = self.__run_slam(scene_id, views_to_proc)
                     if len(results) == 0:
                         continue
-                    
+
                     if not self.no_viz:
                         # Make vizualization (concating viz from all views if doing multiview)
                         viz_tot = None
                         view_ids_viz = self.object_slam.view_ids if self.nviews > 0 \
-                                else [self.object_slam.view_ids[-1]]
+                            else [self.object_slam.view_ids[-1]]
                         for view_id_ba in view_ids_viz:
                             if viz_tot is None:
                                 viz_tot = results[view_id_ba]["viz"]
                             else:
                                 # Concatenated VERTICALLY
-                                viz_tot = np.concatenate((viz_tot, results[view_id_ba]["viz"]), 
-                                                          axis=0)
+                                viz_tot = np.concatenate((viz_tot, results[view_id_ba]["viz"]),
+                                                         axis=0)
                         if self.show_viz:
                             cv2.imshow("ObjectSLAM", viz_tot)
                             cv2.waitKey(1)
@@ -227,11 +228,10 @@ class Evaluator:
                                 if v.size > 0:
                                     cv2.imwrite(os.path.join(viz_extra_dir, f"{k}.png"), v)
                                     print("Wrote viz to", os.path.join(viz_extra_dir, f"{k}.png"))
-                        
 
                     # Wait til final opt to get pose for SLAM mode
                     pred_poses = results[view_id]["poses"] if self.nviews > 0 else None
-                    scene_results.append( (view_id, pred_poses, gt_obj_ids) )
+                    scene_results.append((view_id, pred_poses, gt_obj_ids))
 
                 # Update the saved_detection eval meter (other is saved for later
                 # in case of SLAM mode).
@@ -240,13 +240,12 @@ class Evaluator:
                     for gt_obj_id in gt_obj_ids:
                         if gt_obj_id in self.saved_detections_map[scene_id][view_id].keys():
                             sdet_idx = self.saved_detections_map[scene_id][view_id][gt_obj_id]
-                            self.saved_det_meter.update([gt_obj_id], 
-                                    self.saved_detections["poses"][sdet_idx][None,...],
-                                    self.dataset.get_obj_pose(
-                                            scene_id, view_id, gt_obj_id)[None,...])
+                            self.saved_det_meter.update([gt_obj_id],
+                                                        self.saved_detections["poses"][sdet_idx][None, ...],
+                                                        self.dataset.get_obj_pose(
+                                                            scene_id, view_id, gt_obj_id)[None, ...])
                         else:
                             self.saved_det_meter.update_no_det([gt_obj_id])
-                
 
             if not self.debug_saved_only:
                 # Eval the results for the whole scene at once here
@@ -271,11 +270,13 @@ class Evaluator:
                             result = pred_poses[obj_id]
                             gt_pose = self.dataset.get_obj_pose(scene_id, view_id, obj_id)
                             if self.do_add:
-                                self.meter.update([obj_id], result["T_OtoC"][None,...], 
-                                        gt_pose[None,...])
-                            R, t = result["T_OtoC"][:3,:3], result["T_OtoC"][:3,3]
+                                self.meter.update([obj_id], result["T_OtoC"][None, ...],
+                                                  gt_pose[None, ...])
+                            R, t = result["T_OtoC"][:3, :3], result["T_OtoC"][:3, 3]
+
                             def arr2str(x):
-                                return " ".join(str(elt) for elt in x.reshape(-1).tolist()) 
+                                return " ".join(str(elt) for elt in x.reshape(-1).tolist())
+
                             line = f"{scene_id},{view_id},{obj_id},{result['score']},"
                             line += f"{arr2str(R)},{arr2str(t)},-1"
                             if self.dataset.is_target(scene_id, view_id, obj_id):
@@ -283,7 +284,7 @@ class Evaluator:
                         else:
                             print(f"NOTE: Could not obtain object pose for object {obj_id}")
                             self.meter.update_no_det([obj_id])
-        
+
         if self.do_add:
             if self.dataset.bop_dset == 'ycbv':
                 gt_obj_map = YCBV_CLASSES
@@ -294,7 +295,7 @@ class Evaluator:
             if self.saved_detections is not None:
                 print("\nSaved PoseCNN result:")
                 self.saved_det_meter.pprint_objs(gt_obj_map)
-                #self.saved_det_meter.pprint()
+                # self.saved_det_meter.pprint()
 
         if not self.debug_saved_only:
             if self.do_add:
@@ -307,16 +308,16 @@ class Evaluator:
                     f.write(self.meter.pprint_objs_str(gt_obj_map))
                 # Write these items whether doing ADD* or not. 
                 if num > 0:
-                    ss = [f"NOTE: {100*num_cam_poses_found/num:.1f}% of camera poses found!",
-                           self.object_slam.get_tracking_strtime(),
-                           self.object_slam.get_global_opt_strtime(),
+                    ss = [f"NOTE: {100 * num_cam_poses_found / num:.1f}% of camera poses found!",
+                          self.object_slam.get_tracking_strtime(),
+                          self.object_slam.get_global_opt_strtime(),
                           f"Average keypoint stdev: {self.object_slam.avg_std_meter.average()}"]
                     for s in ss:
                         print(s)
                         f.write("\n" + s + "\n")
 
         if not self.debug_saved_only:
-            csv_path = os.path.join(outdir,  method + ".csv")
+            csv_path = os.path.join(outdir, method + ".csv")
             with open(csv_path, "w") as f:
                 f.writelines(csv_lines)
             print(f"\n\nCSV (BOP format) results written to {csv_path}\n")
@@ -355,7 +356,7 @@ class Evaluator:
             else:
                 # Only take the detections that are of objects in this scene.
                 # If they are not in the scene, then we can't eval them anyways.
-                obj_keys = self.saved_detections_map.get(scene_id,{}).get(view_id_k,{}).keys()
+                obj_keys = self.saved_detections_map.get(scene_id, {}).get(view_id_k, {}).keys()
                 for obj_id in obj_keys:
                     if obj_id in obj_ids_gt:
                         obj_ids.append(obj_id)
@@ -365,38 +366,40 @@ class Evaluator:
                     print("Detection IDs:", list(obj_keys))
                     print("GT IDs:", obj_ids_gt)
                     continue
-            
+
             sample = self.dataset.get_raw(scene_id, view_id_k, obj_ids)
             if 'gt' in self.detection_type:
                 bboxes = sample["bboxes"].numpy()
             else:
                 det_idx = self.saved_detections_map[scene_id][view_id_k][obj_ids[0]]
                 bboxes = [self.saved_detections["bboxes"][self.saved_detections_map[ \
-                        scene_id][view_id_k][obj_id]] for obj_id in obj_ids]
-        
+                    scene_id][view_id_k][obj_id]] for obj_id in obj_ids]
+
             # IF debugging with GT cam pose, grab it here.
             cam_pose = None
             if self.gt_cam_pose:
                 # Make the poses relative to first view
                 cam_pose = self.dataset.get_cam_pose(scene_id, view_id_k) \
-                         @ utils.invert_SE3(self.dataset.get_cam_pose(     \
-                           scene_id, -1 if self.nviews<0 else views_to_proc[0]))
+                           @ utils.invert_SE3(self.dataset.get_cam_pose( \
+                    scene_id, -1 if self.nviews < 0 else views_to_proc[0]))
 
             # Build the keypoint network batch input based on detected bboxes
             # TODO roi_align would be so much easier.
-            img_np = (255 * sample["img"].numpy().transpose((1,2,0))).astype(np.uint8)
-            K_np = sample["K"].numpy()   
+            img_np = (255 * sample["img"].numpy().transpose((1, 2, 0))).astype(np.uint8)
+            K_np = sample["K"].numpy()
             self.object_slam.process_view(view_id_k, img_np, K_np,
-                    np.array(obj_ids,dtype=np.int), np.array(bboxes), sample["model_kps"].numpy(),
-                    sample["kp_model_masks"].numpy(), sample["kp_masks"].numpy(), 
-                    uv_gt = sample["kp_uvs"].numpy() if self.debug_gt_kp else None,
-                    cam_pose = cam_pose)
-            
-        return self.object_slam.collect_results(last_only=self.nviews<0, no_viz=self.no_viz)
-         
-    
+                                          np.array(obj_ids, dtype=np.int), np.array(bboxes),
+                                          sample["model_kps"].numpy(),
+                                          sample["kp_model_masks"].numpy(), sample["kp_masks"].numpy(),
+                                          uv_gt=sample["kp_uvs"].numpy() if self.debug_gt_kp else None,
+                                          cam_pose=cam_pose)
+
+        return self.object_slam.collect_results(last_only=self.nviews < 0, no_viz=self.no_viz)
+
+
 if __name__ == '__main__':
     from lib.args import get_args
+
     args = get_args('eval')
     if args.debug_gt_kp:
         args.detection_type = "gt"
@@ -406,10 +409,10 @@ if __name__ == '__main__':
             print(f"{attr}: {getattr(args, attr)}")
     print("=============================")
     np.random.seed(666)
-    Evaluator(args.dataset, args.data_root, args.checkpoint_path, nviews=args.nviews, 
-            no_network_cov=args.no_network_cov, detection_type=args.detection_type, 
-            debug_gt_kp=args.debug_gt_kp, gt_cam_pose=args.gt_cam_pose,
-            no_prior_det=args.no_prior_det, show_viz=args.show_viz, viz_cov=args.viz_cov,
-            no_viz=args.no_viz, debug_saved_only=args.debug_saved_only, 
-            do_viz_extra=args.do_viz_extra, give_all_prior=args.give_all_prior).run()
+    Evaluator(args.dataset, args.data_root, args.checkpoint_path, nviews=args.nviews,
+              no_network_cov=args.no_network_cov, detection_type=args.detection_type,
+              debug_gt_kp=args.debug_gt_kp, gt_cam_pose=args.gt_cam_pose,
+              no_prior_det=args.no_prior_det, show_viz=args.show_viz, viz_cov=args.viz_cov,
+              no_viz=args.no_viz, debug_saved_only=args.debug_saved_only,
+              do_viz_extra=args.do_viz_extra, give_all_prior=args.give_all_prior).run()
     os.system('notify-send SUO-SLAM "Eval completed"')
